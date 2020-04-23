@@ -11,8 +11,6 @@ library(ggplot2)
 
 # Data Cleaning -----------------------------------------------------------
 
-set.seed(123)
-
 # QinN_2014 liver cirhosis
 qin = curatedMetagenomicData("QinN_2014.metaphlan_bugs_list.stool", dryrun = FALSE)
 qin_est = qin[[1]] 
@@ -29,37 +27,42 @@ t_exp$id = rownames(t_exp)
 
 sub = pData(qin_est)
 sub_condition = sub[c("study_condition", "subjectID")]
+# sub_condition = select(sub, study_condition, subjectID, gender, age, BMI)
 colnames(sub_condition)[2] = "id"
 t_exp = left_join(t_exp, sub_condition, by = "id")
 t_exp$study_condition = factor(t_exp$study_condition, levels = c("control", "cirrhosis"))
 t_exp_c = t_exp[, -colSums(t_exp == 0)]
 t_exp_c = t_exp_c[, -which(colnames(t_exp_c) %in% "id")]
+# t_exp_c$gender = factor(t_exp_c$gender, levels = c("male", "female"))
 
 # Data Split for nested CV ------------------------------------------------
 
-# split data to training and testing
-set.seed(123)
-
-train_part_tuning = sample(nrow(t_exp_c), floor(0.7*nrow(t_exp_c)))
-trainingData_tuning = t_exp_c[train_part_tuning,] # for nested cv to select tuning parameters and for rf
-testingData_tuning = t_exp_c[-train_part_tuning,]
-
 testingData = t_exp_c # for nested cv to compute average performance and for rf
 
-est_part = sample(nrow(trainingData_tuning), size = 0.8 * nrow(trainingData_tuning))
-est = trainingData_tuning[est_part, ] # for rf
-val = trainingData_tuning[-est_part, ] # for rf
-
-# Random Forest -----------------------------------------------------------
-
-# k-fold validation
+# k-fold validation outerloop
+set.seed(123)
 k = 10
 fold_inds = sample(1:k, nrow(testingData), replace = TRUE)
 
-## split  data into training & testing partitions
+# split  data into training & testing partitions
 cv_data = lapply(1:k, 
                  function(index) list(est = testingData[fold_inds != index, , drop = FALSE],
                                       val = testingData[fold_inds == index, , drop = FALSE]))
+
+# k-fold validation innerloop
+trainingData_tuning = cv_data[[1]]$est
+set.seed(123)
+ki = 5
+fold_inds = sample(1:ki, nrow(trainingData_tuning), replace = TRUE)
+
+cv_data_inner = lapply(1:ki, 
+                 function(index) list(est = trainingData_tuning[fold_inds != index, , drop = FALSE],
+                                      val = trainingData_tuning[fold_inds == index, , drop = FALSE]))
+
+est = cv_data_inner[[1]]$est # for rf
+val = cv_data_inner[[1]]$val # for rf
+
+# Random Forest -----------------------------------------------------------
 
 accuracy_all = numeric()
 auc_all = numeric()
@@ -142,6 +145,8 @@ which.min(misclass_list)
 features = importance$species[1:feature_select]
 
 testingData_feature = cbind(testingData[features], testingData[ncol(testingData)])
+
+set.seed(123)
 k = 10
 fold_inds = sample(1:k, nrow(testingData_feature), replace = TRUE)
 
@@ -185,8 +190,8 @@ for (i in 1:k) {
   precision_all[i] = precision
 }
 
-mean(accuracy_all) #average overall accuracy
-mean(auc_all) #average overall auc
+mean(accuracy_all) # average overall accuracy
+mean(auc_all) # average overall auc
 mean(sensitivity_all)
 mean(specificity_all)
 mean(precision_all)
@@ -198,17 +203,18 @@ c = 2^seq(-5, 15, by = 2)
 g = 2^seq(-15, 3, by = 2)
 
 # tune model to find optimal cost, gamma values, 5-fold cross validation
+set.seed(123)
 tune.out = tune(svm, study_condition ~ ., 
                  data = trainingData_tuning, kernel = "radial",
                  ranges = list(cost = c,
                                gamma = g), 
-                 tunecontrol = tune.control(cross=5))
+                 tunecontrol = tune.control(cross = 5))
 
 # show best model
 svm.fit = tune.out$best.model
 
 # 10-fold cv to calculate avg performance
-
+set.seed(123)
 k = 10
 fold_inds = sample(1:k, nrow(testingData), replace = TRUE)
 
@@ -263,15 +269,14 @@ mean(precision_all)
 lambda = 10^seq(-4, -0.5, by = 0.5)
 
 # prepare data
-y = t_exp_c$study_condition
-x = model.matrix(study_condition ~ ., t_exp_c)[,-1]
+est = cv_data_inner[[1]]$est # for tuning
+val = cv_data_inner[[1]]$val # for tuning
 
-x_train_idx = sample(nrow(x), floor(0.7*nrow(x)))
-x_train_tuning = x[x_train_idx,]
-x_test_tuning = x[-x_train_idx,]
+x_train_tuning = model.matrix(study_condition ~ ., est)[,-1]
+x_test_tuning = model.matrix(study_condition ~ ., val)[,-1]
 
-y_train_tuning = y[x_train_idx]
-y_test_tuning = y[-x_train_idx] 
+y_train_tuning = est$study_condition
+y_test_tuning = val$study_condition 
 
 x_test = x
 y_test = y
@@ -285,6 +290,7 @@ max(cv.lasso$cvm)
 bestlambda_lasso = cv.lasso$lambda.min # Select lamda that minimizes training MSE
 
 # 10-fold cv to calculate avg performance
+set.seed(123)
 k = 10
 fold_inds = sample(1:k, nrow(testingData), replace = TRUE)
 
