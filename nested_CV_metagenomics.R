@@ -366,7 +366,7 @@ tuning_grid = data.frame(
 for(i in seq_along(tuning_grid$L1_ratio)) {
   
   # fit CV model for each alpha value
-  fit = cv.glmnet(x_train, y_train, alpha = tuning_grid$L1_ratio[i], 
+  fit = cv.glmnet(x_train_tuning, y_train_tuning, alpha = tuning_grid$L1_ratio[i], 
                    nfolds = 5, lambda = lambda,
                    type.measure = "auc", family = "binomial")
   
@@ -456,7 +456,7 @@ cv.lasso = cv.glmnet(x_train_tuning, y_train_tuning, alpha = 1, nfolds = 5, lamb
                      family = "binomial") # Fit lasso model on training data
 
 # extract coefficients from lasso regression
-lasso_coef = predict(cv.lasso, type = "coefficients", s = bestlambda_lasso)[1:ncol(x_train),] # Display coefficients using lambda chosen by CV
+lasso_coef = predict(cv.lasso, type = "coefficients", s = bestlambda_lasso)[1:ncol(x_train_tuning),] # Display coefficients using lambda chosen by CV
 length(lasso_coef[lasso_coef != 0]) # Display only non-zero coefficients
 feature_coef = data.frame(lasso_coef[lasso_coef != 0])
 features = rownames(feature_coef)[-1]
@@ -516,12 +516,12 @@ mean(precision_all)
 
 # ENet + RF ---------------------------------------------------------------
 set.seed(123)
-cv.enet = cv.glmnet(x_train, y_train, alpha = bestalpha, lambda = lambda,
+cv.enet = cv.glmnet(x_train_tuning, y_train_tuning, alpha = bestalpha, lambda = lambda,
                     type.measure = "auc", 
                     family = "binomial")
 
 # feature select
-enet_coef = predict(cv.enet, type = "coefficients", s = bestlambda_enet)[1:ncol(x_train),] # Display coefficients using lambda chosen by CV
+enet_coef = predict(cv.enet, type = "coefficients", s = bestlambda_enet)[1:ncol(x_train_tuning),] # Display coefficients using lambda chosen by CV
 length(enet_coef[enet_coef != 0]) # Display only non-zero coefficients
 feature_coef = data.frame(enet_coef[enet_coef != 0])
 features = rownames(feature_coef)[-1]
