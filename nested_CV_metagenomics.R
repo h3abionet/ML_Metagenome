@@ -74,7 +74,7 @@ for (i in 1:k) {
   train = cv_data[[i]]$est
   test = cv_data[[i]]$val
   rf_model = randomForest(study_condition ~ ., ntree = 500, 
-                          mtry = floor(sqrt(ncol(train))),
+                          mtry = floor(sqrt(ncol(train) - 1)),
                           importance = TRUE, data = train)
   
   predictions = predict(rf_model, test, type = "response")
@@ -108,7 +108,7 @@ mean(precision_all)
 # Feature Importance + RF -------------------------------------------------
 
 # feature importance selection
-rf_model = randomForest(study_condition ~., ntree = 500, mtry = floor(sqrt(ncol(est))),
+rf_model = randomForest(study_condition ~., ntree = 500, mtry = floor(sqrt(ncol(est) - 1)),
                         importance = TRUE, data = est)
 importance = data.frame(rf_model$importance)
 importance$species = rownames(importance)
