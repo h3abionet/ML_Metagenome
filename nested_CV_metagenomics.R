@@ -281,6 +281,7 @@ y_test_tuning = val$study_condition
 x_test = x
 y_test = y
 
+set.seed(123)
 cv.lasso = cv.glmnet(x_train_tuning, y_train_tuning, alpha = 1, nfolds = 5, lambda = lambda, 
                       type.measure = "auc", 
                       family = "binomial") # Fit lasso model on training data
@@ -388,6 +389,7 @@ bestalpha = tuning_grid$L1_ratio[tuning_grid$cvm_min == min(tuning_grid$cvm_min)
 bestlambda_enet = tuning_grid$lambda_min[tuning_grid$cvm_min == min(tuning_grid$cvm_min)]
 
 # 10-fold cv to calculate avg performance
+set.seed(123)
 k = 10
 fold_inds = sample(1:k, nrow(testingData), replace = TRUE)
 
@@ -448,6 +450,7 @@ mean(precision_all)
 
 # Lasso + RF --------------------------------------------------------------
 
+set.seed(123)
 cv.lasso = cv.glmnet(x_train_tuning, y_train_tuning, alpha = 1, nfolds = 5, lambda = lambda, 
                      type.measure = "auc", 
                      family = "binomial") # Fit lasso model on training data
@@ -461,6 +464,7 @@ features = rownames(feature_coef)[-1]
 # RF using features from lasso
 # 10-fold cv to calculate avg performance
 testingData_feature = cbind(testingData[features], testingData[ncol(testingData)])
+set.seed(123)
 k = 10
 fold_inds = sample(1:k, nrow(testingData_feature), replace = TRUE)
 
@@ -511,7 +515,7 @@ mean(specificity_all)
 mean(precision_all)
 
 # ENet + RF ---------------------------------------------------------------
-
+set.seed(123)
 cv.enet = cv.glmnet(x_train, y_train, alpha = bestalpha, lambda = lambda,
                     type.measure = "auc", 
                     family = "binomial")
@@ -525,6 +529,7 @@ features = rownames(feature_coef)[-1]
 # RF using features from lasso
 # 10-fold cv to calculate avg performance
 testingData_feature = cbind(testingData[features], testingData[ncol(testingData)])
+set.seed(123)
 k = 10
 fold_inds = sample(1:k, nrow(testingData_feature), replace = TRUE)
 
