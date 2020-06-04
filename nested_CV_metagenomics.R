@@ -1,4 +1,4 @@
-
+# Analyses are inspired by https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004977#sec012
 # Load Libraries ----------------------------------------------------------
 
 library(curatedMetagenomicData)
@@ -352,7 +352,8 @@ mean(precision_all)
 
 # ENet --------------------------------------------------------------------
 
-#define alpha
+# reference: https://afit-r.github.io/regularized_regression
+# define alpha
 L1_ratio = c(0.1, 0.5, 0.7, 0.9, 0.95, 0.99, 1.0)
 
 tuning_grid = data.frame(
@@ -363,6 +364,7 @@ tuning_grid = data.frame(
   lambda_1se = NA
 )
 
+# search best combo of alpha and lambda by freezing alpha
 for(i in seq_along(tuning_grid$L1_ratio)) {
   
   # fit CV model for each alpha value
