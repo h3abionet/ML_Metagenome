@@ -283,12 +283,12 @@ y_test = y
 
 set.seed(123)
 cv.lasso = cv.glmnet(x_train_tuning, y_train_tuning, alpha = 1, nfolds = 5, lambda = lambda, 
-                      type.measure = "auc", 
+                      type.measure = "deviance", 
                       family = "binomial") # Fit lasso model on training data
 
-plot(cv.lasso) # Draw plot of training MSE as a function of lambda\
+plot(cv.lasso) # Draw plot of training deviance as a function of lambda\
 max(cv.lasso$cvm)
-bestlambda_lasso = cv.lasso$lambda.min # Select lamda that minimizes training MSE
+bestlambda_lasso = cv.lasso$lambda.min # Select lamda that minimizes training deviance
 
 # 10-fold cv to calculate avg performance
 set.seed(123)
@@ -317,7 +317,7 @@ for (i in 1:k) {
   y_test = test$study_condition
   
   lasso = glmnet(x_train, y_train, alpha = 1, lambda = bestlambda_lasso, 
-                 type.measure = "auc", 
+                 type.measure = "deviance", 
                  family = "binomial")
   
   prediction = predict(lasso, x_test, type = "class")
@@ -370,7 +370,7 @@ for(i in seq_along(tuning_grid$L1_ratio)) {
   # fit CV model for each alpha value
   fit = cv.glmnet(x_train_tuning, y_train_tuning, alpha = tuning_grid$L1_ratio[i], 
                    nfolds = 5, lambda = lambda,
-                   type.measure = "auc", family = "binomial")
+                   type.measure = "deviance", family = "binomial")
   
   # extract CVM and lambda values
   tuning_grid$cvm_min[i]    = fit$cvm[fit$lambda == fit$lambda.min]
@@ -417,7 +417,7 @@ for (i in 1:k) {
   y_test = test$study_condition
   
   enet = glmnet(x_train, y_train, alpha = bestalpha, lambda = bestlambda_enet, 
-                 type.measure = "auc", 
+                 type.measure = "deviance", 
                  family = "binomial")
   
   prediction = predict(enet, x_test, type = "class")
@@ -454,7 +454,7 @@ mean(precision_all)
 
 set.seed(123)
 cv.lasso = cv.glmnet(x_train_tuning, y_train_tuning, alpha = 1, nfolds = 5, lambda = lambda, 
-                     type.measure = "auc", 
+                     type.measure = "deviance", 
                      family = "binomial") # Fit lasso model on training data
 
 # extract coefficients from lasso regression
@@ -519,7 +519,7 @@ mean(precision_all)
 # ENet + RF ---------------------------------------------------------------
 set.seed(123)
 cv.enet = cv.glmnet(x_train_tuning, y_train_tuning, alpha = bestalpha, lambda = lambda,
-                    type.measure = "auc", 
+                    type.measure = "deviance", 
                     family = "binomial")
 
 # feature select
